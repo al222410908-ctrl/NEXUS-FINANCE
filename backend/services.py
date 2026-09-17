@@ -208,6 +208,123 @@ def list_summary(conn):
 
 
 # ---------------------------------------------------------------------------
+# Lectura para el panel web (PWA)
+# ---------------------------------------------------------------------------
+
+TZ = "America/Mexico_City"
+
+
+def get_dashboard(conn):
+    """Todo lo que pinta la pantalla principal: cuentas, alcancías, bolsillo, suscripciones."""
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        cur.execute("select id, name, type, balance from accounts order by type, name")
+        accounts = fetch_dict(cur)
+
+        cur.execute("select id, name, target_amount, saved_amount, deadline, icon from piggy_banks order by name")
+        piggy = fetch_dict(cur)
+
+        cur.execute(
+            """
+            select pa.base_amount, pa.reset_day, pa.reset_hour, pa.timezone,
+                   pa.rollover_mode, a.name as account_name, a.balance as balance
+            from periodic_allowances pa
+            join accounts a on a.id = pa.account_id
+            """
+        )
+        allowance = fetch_dict(cur)
+
+        cur.execute(
+            """
+            select s.id, s.name, s.amount, s.billing_day, s.is_active,
+                   a.name as account_name
+            from subscriptions s
+            join accounts a on a.id = s.linked_account_id
+            order by s.is_active desc, s.billing_day
+            """
+        )
+        subs = fetch_dict(cur)
+    return {
+        "accounts": accounts,
+        "piggy_banks": piggy,
+        "allowance": allowance,
+        "subscriptions": subs,
+    }
+
+
+def list_transactions(conn, limit: int = 100, month: str | None = None):
+    limit = max(1, min(int(limit or 100), 500))
+    params = []
+    where = ""
+    if month:
+        where = f"where to_char(t.created_at at time zone '{TZ}', 'YYYY-MM') = %s"
+        params.append(month)
+    params.append(limit)
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        cur.execute(
+            f"""
+            select t.id, t.created_at, t.tx_type, t.amount,
+                   t.raw_input as concept,
+                   c.name as category,
+                   a.name as account
+            from transactions t
+            left join categories c on c.id = t.category_id
+            join accounts a on a.id = t.account_id
+            {where}
+            order by t.created_at desc
+            limit %s
+            """,
+            params,
+        )
+        return fetch_dict(cur)
+
+
+def get_stats(conn, month: str | None = None):
+    """Totales del mes (ingresos/gastos por categoría) y tendencia de 6 meses."""
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        totals = {"income": 0.0, "expense": 0.0}
+        by_category = []
+        if month:
+            cur.execute(
+                f"""
+                select t.tx_type, sum(t.amount) as total
+                from transactions t
+                where to_char(t.created_at at time zone '{TZ}', 'YYYY-MM') = %s
+                group by t.tx_type
+                """,
+                (month,),
+            )
+            for r in fetch_dict(cur):
+                if r["tx_type"] in totals:
+                    totals[r["tx_type"]] = float(r["total"])
+
+            cur.execute(
+                f"""
+                select coalesce(c.name, 'Sin categoría') as category, sum(t.amount) as total
+                from transactions t
+                left join categories c on c.id = t.category_id
+                where t.tx_type = 'expense'
+                  and to_char(t.created_at at time zone '{TZ}', 'YYYY-MM') = %s
+                group by 1 order by total desc
+                """,
+                (month,),
+            )
+            by_category = fetch_dict(cur)
+
+        cur.execute(
+            f"""
+            select to_char(date_trunc('month', t.created_at at time zone '{TZ}'), 'YYYY-MM') as ym,
+                   sum(case when t.tx_type = 'income' then t.amount else 0 end) as income,
+                   sum(case when t.tx_type = 'expense' then t.amount else 0 end) as expense
+            from transactions t
+            where t.created_at >= now() - interval '6 months'
+            group by 1 order by 1
+            """
+        )
+        trend = fetch_dict(cur)
+    return {"month": month, "totals": totals, "by_category": by_category, "trend": trend}
+
+
+# ---------------------------------------------------------------------------
 # Barrido semanal (cron). Regla de sobregasto elegida: ABSORBER EL DÉFICIT.
 # ---------------------------------------------------------------------------
 

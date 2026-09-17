@@ -1,14 +1,29 @@
-# main.py — FastAPI: webhook de bot, endpoints del cron y estado.
+# main.py — FastAPI: webhook de bot, endpoints del cron, API del panel web y PWA.
+import hashlib
+import hmac
 import logging
+import time
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request, Response
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
-from . import ALLOWED_USER_IDS, CRON_AUTH_TOKEN, TELEGRAM_TOKEN
+from . import (
+    ALLOWED_USER_IDS,
+    CRON_AUTH_TOKEN,
+    DASHBOARD_PASSWORD,
+    DASHBOARD_SECRET,
+    TELEGRAM_TOKEN,
+)
 from .db import dict_conn
 from .services import (
+    get_dashboard,
+    get_stats,
     list_summary,
+    list_transactions,
     parse_message,
     register_transaction,
     run_subscriptions,
@@ -16,15 +31,115 @@ from .services import (
     telegram_send,
 )
 
+WEB_DIR = Path(__file__).parent / "web"
+SESSION_COOKIE = "nx_session"
+SESSION_TTL = 60 * 60 * 24 * 30  # 30 días
+
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("nexus.main")
 
 app = FastAPI(title="NexusFinance API", version="0.1.0")
 
 
-@app.get("/")
-def root():
+@app.get("/api/health")
+def health():
     return {"ok": True, "service": "NexusFinance"}
+
+
+# ---------------------------------------------------------------------------
+# Panel web (PWA): login por contraseña + API de solo lectura
+# ---------------------------------------------------------------------------
+
+
+class LoginBody(BaseModel):
+    password: str = ""
+
+
+def _sign(payload: str) -> str:
+    return hmac.new(DASHBOARD_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+
+
+def _make_token() -> str:
+    exp = str(int(time.time()) + SESSION_TTL)
+    return f"{exp}.{_sign(exp)}"
+
+
+def _valid_token(token: str | None) -> bool:
+    if not token or "." not in token:
+        return False
+    payload, sig = token.rsplit(".", 1)
+    if not hmac.compare_digest(_sign(payload), sig):
+        return False
+    try:
+        return int(payload) > int(time.time())
+    except ValueError:
+        return False
+
+
+def _require_session(request: Request):
+    if _valid_token(request.cookies.get(SESSION_COOKIE)):
+        return
+    tok = request.headers.get("x-dashboard-token")
+    if tok and DASHBOARD_PASSWORD and hmac.compare_digest(tok, DASHBOARD_PASSWORD):
+        return
+    raise HTTPException(401, "No autorizado")
+
+
+@app.post("/api/login")
+def api_login(body: LoginBody, request: Request, response: Response):
+    if not DASHBOARD_PASSWORD or not hmac.compare_digest(body.password, DASHBOARD_PASSWORD):
+        raise HTTPException(401, "Contraseña incorrecta")
+    response.set_cookie(
+        SESSION_COOKIE,
+        _make_token(),
+        max_age=SESSION_TTL,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https",
+    )
+    return {"ok": True}
+
+
+@app.post("/api/logout")
+def api_logout(response: Response):
+    response.delete_cookie(SESSION_COOKIE)
+    return {"ok": True}
+
+
+@app.get("/api/session")
+def api_session(request: Request):
+    _require_session(request)
+    return {"ok": True}
+
+
+@app.get("/api/summary")
+def api_summary(request: Request):
+    _require_session(request)
+    conn = dict_conn()
+    try:
+        return get_dashboard(conn)
+    finally:
+        conn.close()
+
+
+@app.get("/api/transactions")
+def api_transactions(request: Request, limit: int = 100, month: str | None = None):
+    _require_session(request)
+    conn = dict_conn()
+    try:
+        return {"items": list_transactions(conn, limit, month)}
+    finally:
+        conn.close()
+
+
+@app.get("/api/stats")
+def api_stats(request: Request, month: str | None = None):
+    _require_session(request)
+    conn = dict_conn()
+    try:
+        return get_stats(conn, month)
+    finally:
+        conn.close()
 
 
 @app.get("/debug/db")
@@ -166,3 +281,8 @@ async def cron_subscriptions(x_cron_token: str = Header(None)):
 def _require_cron(token):
     if CRON_AUTH_TOKEN and token != CRON_AUTH_TOKEN:
         raise HTTPException(403, "Bad token")
+
+
+# PWA: va al final para que las rutas /api y /webhook tengan prioridad.
+if WEB_DIR.is_dir():
+    app.mount("/", StaticFiles(directory=str(WEB_DIR), html=True), name="web")

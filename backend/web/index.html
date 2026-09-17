@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Nexus Finance</title>
+  <meta name="theme-color" content="#0b1220" />
+  <meta name="description" content="Panel de finanzas personales Nexus" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Nexus" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="login" class="login" hidden>
+    <div class="login-card">
+      <div class="brand">
+        <img src="/icons/icon-192.png" alt="" width="56" height="56" />
+        <h1>Nexus Finance</h1>
+        <p>Tu dinero, claro y al día.</p>
+      </div>
+      <form id="login-form" autocomplete="on">
+        <input id="password" type="password" inputmode="text" placeholder="Contraseña" autocomplete="current-password" required />
+        <button type="submit">Entrar</button>
+      </form>
+      <p id="login-error" class="error" hidden></p>
+    </div>
+  </div>
+
+  <div id="app" hidden>
+    <header class="topbar">
+      <div class="topbar-title">
+        <img src="/icons/icon-192.png" alt="" width="28" height="28" />
+        <span>Nexus Finance</span>
+      </div>
+      <button id="logout" class="ghost" title="Salir">Salir</button>
+    </header>
+
+    <main>
+      <section id="hero" class="hero"></section>
+
+      <section class="section">
+        <div class="section-head">
+          <h2>Movimientos</h2>
+          <select id="month"></select>
+        </div>
+        <div id="totals" class="totals"></div>
+        <div id="txns" class="list"></div>
+      </section>
+
+      <section class="section">
+        <h2>Gastos por categoría</h2>
+        <div id="categories" class="bars"></div>
+      </section>
+
+      <section class="section">
+        <h2>Tendencia (6 meses)</h2>
+        <div id="trend" class="trend"></div>
+      </section>
+
+      <section class="section">
+        <h2>Suscripciones</h2>
+        <div id="subs" class="list compact"></div>
+      </section>
+
+      <p id="updated" class="updated"></p>
+    </main>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
