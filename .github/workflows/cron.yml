@@ -2,23 +2,23 @@ name: nexus-finance-cron
 
 on:
   schedule:
-    # Lunes 00:00 America/Mexico_City (UTC-6) = 06:00 UTC (espacio: invierno -6)
-    # Nota: ajustar para horario de verano si aplica.
+    # Lunes 00:00 America/Mexico_City (UTC-6) = 06:00 UTC
     - cron: "0 6 * * 1"
     # Revisión diaria de suscripciones: 07:00 UTC
     - cron: "0 7 * * *"
+  workflow_dispatch:
 
 jobs:
   sweep:
     runs-on: ubuntu-latest
-    if: github.event.schedule == '0 6 * * 1'
+    if: github.event.schedule == '0 6 * * 1' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Llamar al barrido semanal
         run: curl -f -X POST "${{ secrets.API_URL }}/cron/sweep" -H "x-cron-token: ${{ secrets.CRON_AUTH_TOKEN }}"
 
   subscriptions:
     runs-on: ubuntu-latest
-    if: github.event.schedule == '0 7 * * *'
+    if: github.event.schedule == '0 7 * * *' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Revisar suscripciones
         run: curl -f -X POST "${{ secrets.API_URL }}/cron/subscriptions" -H "x-cron-token: ${{ secrets.CRON_AUTH_TOKEN }}"
