@@ -1,0 +1,13 @@
+# Requerido para Railway
+services:
+  - name: nexus-finance
+    runtime: python
+    rootDir: .
+    build: pip install --upgrade pip && pip install -r requirements.txt
+    start: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    variables:
+      DATABASE_URL: ""
+      TELEGRAM_BOT_TOKEN: ""
+      GROQ_API_KEY: ""
+      CRON_AUTH_TOKEN: ""
+      ALLOWED_USER_IDS: ""
