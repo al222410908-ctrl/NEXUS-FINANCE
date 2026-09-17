@@ -14,11 +14,13 @@ jobs:
     if: github.event.schedule == '0 6 * * 1' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Llamar al barrido semanal
-        run: curl -f -X POST "${{ secrets.API_URL }}/cron/sweep" -H "x-cron-token: ${{ secrets.CRON_AUTH_TOKEN }}"
+        run: |
+          curl -f -X POST "${{ secrets.API_URL }}/cron/sweep" -H "x-cron-token: ${{ secrets.CRON_AUTH_TOKEN }}"
 
   subscriptions:
     runs-on: ubuntu-latest
     if: github.event.schedule == '0 7 * * *' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Revisar suscripciones
-        run: curl -f -X POST "${{ secrets.API_URL }}/cron/subscriptions" -H "x-cron-token: ${{ secrets.CRON_AUTH_TOKEN }}"
+        run: |
+          curl -f -X POST "${{ secrets.API_URL }}/cron/subscriptions" -H "x-cron-token: ${{ secrets.CRON_AUTH_TOKEN }}"
