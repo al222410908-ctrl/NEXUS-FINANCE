@@ -55,6 +55,18 @@ class LoginBody(BaseModel):
     password: str = ""
 
 
+def _pwd_ok(candidate: str) -> bool:
+    """Acepta la contraseña del panel o el token del cron (respaldo garantizado)."""
+    candidate = (candidate or "").strip()
+    if not candidate:
+        return False
+    if DASHBOARD_PASSWORD and hmac.compare_digest(candidate, DASHBOARD_PASSWORD):
+        return True
+    if CRON_AUTH_TOKEN and hmac.compare_digest(candidate, CRON_AUTH_TOKEN):
+        return True
+    return False
+
+
 def _sign(payload: str) -> str:
     return hmac.new(DASHBOARD_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
 
@@ -79,15 +91,14 @@ def _valid_token(token: str | None) -> bool:
 def _require_session(request: Request):
     if _valid_token(request.cookies.get(SESSION_COOKIE)):
         return
-    tok = request.headers.get("x-dashboard-token")
-    if tok and DASHBOARD_PASSWORD and hmac.compare_digest(tok, DASHBOARD_PASSWORD):
+    if _pwd_ok(request.headers.get("x-dashboard-token")):
         return
     raise HTTPException(401, "No autorizado")
 
 
 @app.post("/api/login")
 def api_login(body: LoginBody, request: Request, response: Response):
-    if not DASHBOARD_PASSWORD or not hmac.compare_digest(body.password, DASHBOARD_PASSWORD):
+    if not _pwd_ok(body.password):
         raise HTTPException(401, "Contraseña incorrecta")
     response.set_cookie(
         SESSION_COOKIE,
