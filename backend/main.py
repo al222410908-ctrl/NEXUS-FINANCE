@@ -27,6 +27,30 @@ def root():
     return {"ok": True, "service": "NexusFinance"}
 
 
+@app.get("/debug/db")
+def debug_db(token: str = ""):
+    if CRON_AUTH_TOKEN and token != CRON_AUTH_TOKEN:
+        raise HTTPException(403, "Bad token")
+    from . import DATABASE_URL
+
+    info = {
+        "has_database_url": bool(DATABASE_URL),
+        "db_url_scheme": DATABASE_URL.split("://", 1)[0] if DATABASE_URL else None,
+        "db_url_host": (DATABASE_URL.split("@", 1)[1].split("/", 1)[0] if "@" in DATABASE_URL else None),
+    }
+    try:
+        conn = dict_conn()
+        with conn.cursor() as cur:
+            cur.execute("select count(*) from accounts")
+            info["accounts"] = cur.fetchone()[0]
+        conn.close()
+        info["ok"] = True
+    except Exception as e:  # noqa
+        info["ok"] = False
+        info["error"] = f"{type(e).__name__}: {e}"
+    return info
+
+
 # ---------------------------------------------------------------------------
 # Telegram webhook
 # ---------------------------------------------------------------------------
