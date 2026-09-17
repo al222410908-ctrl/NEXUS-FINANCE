@@ -42,7 +42,8 @@ hw("JS OK, cargando datos…", "ok");
 
 const { useState, useEffect, useRef, useMemo } = React;
 const h = window.htm.bind(React.createElement);
-const VERSION = "v16";
+const VERSION = "v17";
+const EMB = (typeof window !== "undefined" && window.__NEXUS__) || null;
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
@@ -424,13 +425,14 @@ function MonthSelect({ month, trend, onMonth }) {
 // ---------------------------------------------------------------- app
 
 function App() {
-  const [summary, setSummary] = useState(null);
-  const [stats, setStats] = useState(null);
-  const [txns, setTxns] = useState(null);
-  const [month, setMonth] = useState(null);
+  const [summary, setSummary] = useState(EMB ? EMB.summary : null);
+  const [stats, setStats] = useState(EMB ? EMB.stats : null);
+  const [txns, setTxns] = useState(EMB ? EMB.txns : null);
+  const [month, setMonth] = useState(EMB ? EMB.month : null);
   const [err, setErr] = useState(false);
 
   useEffect(() => {
+    if (EMB) return;
     (async () => {
       try {
         const s = await api("/api/summary");

@@ -9,6 +9,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException, Request, Response
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -20,6 +21,7 @@ from . import (
     TELEGRAM_TOKEN,
 )
 from .db import dict_conn
+from .render import render_panel
 from .services import (
     get_dashboard,
     get_stats,
@@ -363,6 +365,42 @@ async def cron_subscriptions(x_cron_token: str = Header(None)):
 def _require_cron(token):
     if CRON_AUTH_TOKEN and token != CRON_AUTH_TOKEN:
         raise HTTPException(403, "Bad token")
+
+
+# ---------------------------------------------------------------------------
+# Panel servidor-renderizado (SSR): el contenido se pinta en el HTML, así que
+# se ve aunque el navegador tenga JavaScript desactivado o fallando.
+# ---------------------------------------------------------------------------
+
+
+def _current_or_last_month(conn) -> str:
+    stats0 = get_stats(conn, None)
+    trend = [m["ym"] for m in (stats0.get("trend") or [])]
+    current = time.strftime("%Y-%m")
+    return current if current in trend else (sorted(trend)[-1] if trend else current)
+
+
+def _build_panel_html() -> str:
+    conn = dict_conn()
+    try:
+        month = _current_or_last_month(conn)
+        summary = get_dashboard(conn)
+        stats = get_stats(conn, month)
+        txns = list_transactions(conn, 200, month)
+        return render_panel(summary, stats, txns, month)
+    finally:
+        conn.close()
+
+
+@app.get("/", response_class=HTMLResponse)
+@app.get("/index.html", response_class=HTMLResponse)
+def panel_page():
+    try:
+        return _build_panel_html()
+    except HTTPException:
+        raise
+    except Exception:
+        return render_panel({}, {"totals": {}, "by_category": [], "trend": []}, [], None)
 
 
 # PWA: va al final para que las rutas /api y /webhook tengan prioridad.
