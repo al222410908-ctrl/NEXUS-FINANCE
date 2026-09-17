@@ -236,20 +236,25 @@ $("#login-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const err = $("#login-error");
   err.hidden = true;
+  const pwd = $("#password").value.trim();
+  if (!pwd) {
+    err.textContent = "Escribe tu contraseña.";
+    err.hidden = false;
+    return;
+  }
   try {
     await api("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: $("#password").value }),
+      body: JSON.stringify({ password: pwd }),
     });
     $("#password").value = "";
     showApp();
     await load();
-  } catch (e) {
-    if (e.message !== "unauthorized") {
-      err.textContent = "Contraseña incorrecta";
-      err.hidden = false;
-    }
+  } catch (e2) {
+    // 401 también cae aquí: el backend rechazó la contraseña.
+    err.textContent = "Contraseña incorrecta. Pega el token exacto (respetando mayúsculas).";
+    err.hidden = false;
   }
 });
 
