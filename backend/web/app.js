@@ -28,7 +28,7 @@ if (!window.React || !window.htm) {
 
 const { useState, useEffect, useRef, useMemo } = React;
 const h = window.htm.bind(React.createElement);
-const VERSION = "v14";
+const VERSION = "v15";
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
