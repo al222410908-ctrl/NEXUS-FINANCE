@@ -252,6 +252,7 @@ canvas { display: block; max-width: 100%; }
   padding: 12px;
   border-radius: 12px;
 }
+.boot { color: var(--muted); font-size: .88rem; text-align: center; padding: 18vh 16px; }
 
 /* ---------- Esqueletos ---------- */
 .sk { position: relative; overflow: hidden; background: rgba(255, 255, 255, .07); border-radius: 8px; }

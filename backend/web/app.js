@@ -1,7 +1,5 @@
-import { html } from "https://unpkg.com/htm@3.1.1/dist/htm.module.js";
-
 const { useState, useEffect, useRef, useMemo } = React;
-const h = html.bind(React.createElement);
+const h = window.htm.bind(React.createElement);
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
@@ -478,8 +476,14 @@ function App() {
   </${React.Fragment}>`;
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(h`<App />`);
+window.addEventListener("error", (e) => {
+  const root = document.getElementById("root");
+  if (root) root.innerHTML = '<p class="boot">Error al cargar el panel: ' + escapeHtml(e.message || "desconocido") + "</p>";
+});
 
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister()));
+try {
+  ReactDOM.createRoot(document.getElementById("root")).render(h`<App />`);
+} catch (e) {
+  const root = document.getElementById("root");
+  if (root) root.innerHTML = '<p class="boot">Error de arranque: ' + escapeHtml(e.message || String(e)) + "</p>";
 }
