@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v12" />
+  <link rel="stylesheet" href="/styles.css?v13" />
   <script>
     // Limpia copias viejas guardadas (service worker y caché) para que el panel siempre se vea actual.
     if ("serviceWorker" in navigator) {
@@ -29,10 +29,10 @@
 <body>
   <div id="root"><p class="boot">Cargando panel…</p></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="/app.js?v12"></script>
+  <script src="/vendor/react.min.js"></script>
+  <script src="/vendor/react-dom.min.js"></script>
+  <script src="/vendor/htm.min.js"></script>
+  <script src="/vendor/chart.min.js"></script>
+  <script src="/app.js?v13"></script>
 </body>
 </html>

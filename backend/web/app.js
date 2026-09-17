@@ -15,6 +15,7 @@ if (!window.React || !window.htm) {
 
 const { useState, useEffect, useRef, useMemo } = React;
 const h = window.htm.bind(React.createElement);
+const VERSION = "v13";
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
@@ -486,7 +487,7 @@ function App() {
         ${summary ? h`<SubsView subs=${summary.subscriptions || []} />` : h`<p className="empty">Cargando…</p>`}
       </section>
 
-      <p className="updated">Actualizado ${new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}</p>
+      <p className="updated">Actualizado ${new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })} · ${VERSION}</p>
     </main>
   </${React.Fragment}>`;
 }
