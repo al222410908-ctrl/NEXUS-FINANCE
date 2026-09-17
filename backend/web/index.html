@@ -279,6 +279,25 @@ canvas { display: block; max-width: 100%; }
   border-radius: 12px;
 }
 .boot { color: var(--muted); font-size: .88rem; text-align: center; padding: 18vh 16px; }
+.hw {
+  position: fixed;
+  left: 10px;
+  bottom: 10px;
+  z-index: 99;
+  max-width: 86vw;
+  padding: 5px 9px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  background: rgba(11, 18, 32, .85);
+  color: var(--muted-2);
+  font-size: .66rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  line-height: 1.35;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+.hw.ok { border-color: rgba(16, 185, 129, .35); color: #6EE7B7; }
+.hw.err { border-color: rgba(239, 68, 68, .45); color: #FCA5A5; }
 
 /* ---------- Esqueletos ---------- */
 .sk { position: relative; overflow: hidden; background: rgba(255, 255, 255, .07); border-radius: 8px; }
@@ -333,6 +352,8 @@ canvas { display: block; max-width: 100%; }
 </head>
 <body>
   <div id="root"><p class="boot">Cargando panel&hellip;</p></div>
+  <div id="hw" class="hw">Nexus v16 Â· esperando JSâ€¦</div>
+  <noscript><p class="boot">Tu navegador tiene JavaScript desactivado. ActÃ­valo para ver el panel.</p></noscript>
   <script>/**
  * @license React
  * react.production.min.js
@@ -658,6 +679,14 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
 
 const bootBox = () => document.getElementById("root");
 
+function hw(msg, cls) {
+  const el = document.getElementById("hw");
+  if (el) {
+    el.textContent = "Nexus " + VERSION + " Â· " + msg;
+    el.className = "hw" + (cls ? " " + cls : "");
+  }
+}
+
 function report(tag, extra) {
   try {
     fetch("/api/panel_report", {
@@ -671,12 +700,16 @@ function report(tag, extra) {
 
 window.addEventListener("error", (e) => {
   report("winerr", e.message || "desconocido");
+  hw("ERROR: " + (e.message || "desconocido"), "err");
   const root = bootBox();
   if (root) root.innerHTML = "<p class=\"boot\">Error al cargar el panel: " + escapeHtml(e.message || "desconocido") + "</p>";
 });
 
+hw("esperando JSâ€¦");
+
 if (!window.React || !window.htm) {
   report("noreact", "React:" + !!window.React + " htm:" + !!window.htm);
+  hw("ERROR: librerÃ­as no cargadas", "err");
   const root = bootBox();
   if (root) {
     root.innerHTML = "<p class=\"boot\">No se pudieron cargar las librerÃ­as del panel (React o htm). Revisa tu conexiÃ³n a internet y vuelve a cargar.</p>";
@@ -684,9 +717,11 @@ if (!window.React || !window.htm) {
   throw new Error("librerias web no disponibles");
 }
 
+hw("JS OK, cargando datosâ€¦", "ok");
+
 const { useState, useEffect, useRef, useMemo } = React;
 const h = window.htm.bind(React.createElement);
-const VERSION = "v15";
+const VERSION = "v16";
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
@@ -1094,6 +1129,7 @@ function App() {
         setErr(false);
       } catch (e) {
         report("loaderr", (e && e.message) || String(e));
+        hw("ERROR al cargar datos: " + ((e && e.message) || String(e)), "err");
         setErr(true);
       }
     })();
@@ -1121,6 +1157,7 @@ function App() {
       okReported.current = true;
       const root = document.getElementById("root");
       report("ok", "hijos=" + (root ? root.childElementCount : -1));
+      hw("listo", "ok");
     }
   }, [summary, stats, txns, err]);
 
@@ -1191,6 +1228,7 @@ setTimeout(() => {
   const root = document.getElementById("root");
   if (root && !root.childNodes.length) {
     report("empty_root", "el arranque termino sin contenido en pantalla");
+    hw("ERROR: pantalla vacÃ­a (EMPTY)", "err");
     root.innerHTML = '<p class="boot">El panel quedÃ³ vacÃ­o de forma inesperada. Intenta recargar; si sigue, avÃ­sale a Nexus con este cÃ³digo: EMPTY.</p>';
   }
 }, 6000);

@@ -47,6 +47,8 @@ $mid = @'
 </head>
 <body>
   <div id="root"><p class="boot">Cargando panel&hellip;</p></div>
+  <div id="hw" class="hw">Nexus v16 · esperando JS…</div>
+  <noscript><p class="boot">Tu navegador tiene JavaScript desactivado. Actívalo para ver el panel.</p></noscript>
   <script>
 '@
 

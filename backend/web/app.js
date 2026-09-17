@@ -1,5 +1,13 @@
 const bootBox = () => document.getElementById("root");
 
+function hw(msg, cls) {
+  const el = document.getElementById("hw");
+  if (el) {
+    el.textContent = "Nexus " + VERSION + " · " + msg;
+    el.className = "hw" + (cls ? " " + cls : "");
+  }
+}
+
 function report(tag, extra) {
   try {
     fetch("/api/panel_report", {
@@ -13,12 +21,16 @@ function report(tag, extra) {
 
 window.addEventListener("error", (e) => {
   report("winerr", e.message || "desconocido");
+  hw("ERROR: " + (e.message || "desconocido"), "err");
   const root = bootBox();
   if (root) root.innerHTML = "<p class=\"boot\">Error al cargar el panel: " + escapeHtml(e.message || "desconocido") + "</p>";
 });
 
+hw("esperando JS…");
+
 if (!window.React || !window.htm) {
   report("noreact", "React:" + !!window.React + " htm:" + !!window.htm);
+  hw("ERROR: librerías no cargadas", "err");
   const root = bootBox();
   if (root) {
     root.innerHTML = "<p class=\"boot\">No se pudieron cargar las librerías del panel (React o htm). Revisa tu conexión a internet y vuelve a cargar.</p>";
@@ -26,9 +38,11 @@ if (!window.React || !window.htm) {
   throw new Error("librerias web no disponibles");
 }
 
+hw("JS OK, cargando datos…", "ok");
+
 const { useState, useEffect, useRef, useMemo } = React;
 const h = window.htm.bind(React.createElement);
-const VERSION = "v15";
+const VERSION = "v16";
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
@@ -436,6 +450,7 @@ function App() {
         setErr(false);
       } catch (e) {
         report("loaderr", (e && e.message) || String(e));
+        hw("ERROR al cargar datos: " + ((e && e.message) || String(e)), "err");
         setErr(true);
       }
     })();
@@ -463,6 +478,7 @@ function App() {
       okReported.current = true;
       const root = document.getElementById("root");
       report("ok", "hijos=" + (root ? root.childElementCount : -1));
+      hw("listo", "ok");
     }
   }, [summary, stats, txns, err]);
 
@@ -533,6 +549,7 @@ setTimeout(() => {
   const root = document.getElementById("root");
   if (root && !root.childNodes.length) {
     report("empty_root", "el arranque termino sin contenido en pantalla");
+    hw("ERROR: pantalla vacía (EMPTY)", "err");
     root.innerHTML = '<p class="boot">El panel quedó vacío de forma inesperada. Intenta recargar; si sigue, avísale a Nexus con este código: EMPTY.</p>';
   }
 }, 6000);
