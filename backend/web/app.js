@@ -45,6 +45,22 @@ function lightBg(hex) {
   return `${hex}1F`;
 }
 
+function countUp(el, value) {
+  if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (el) el.textContent = money.format(value);
+    return;
+  }
+  const dur = 750;
+  const start = performance.now();
+  function frame(now) {
+    const p = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = money.format(value * eased);
+    if (p < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
 // ---------------------------------------------------------------- esqueletos
 
 function skeleton() {
@@ -99,12 +115,13 @@ function renderHero() {
     el.className = "balance-card rise";
     el.innerHTML = `
       <div class="label">${escapeHtml(pocket.name)}</div>
-      <div class="amount">${money.format(pocket.balance)}</div>
+      <div class="amount">${money.format(0)}</div>
       <div class="tags">
         <span class="tag">Base ${money.format(allowance?.[0]?.base_amount ?? 0)}</span>
         <span class="tag">Se reinicia cada lunes</span>
       </div>`;
     hero.appendChild(el);
+    countUp(el.querySelector(".amount"), Number(pocket.balance));
   }
 
   piggy_banks.forEach((p, i) => {
@@ -117,14 +134,15 @@ function renderHero() {
     el.innerHTML = `
       <div class="piggy-top">
         <span class="name"><i class="d" style="background:var(--green)"></i>${escapeHtml(p.name)}</span>
-        <span class="val">${pct}%</span>
+        <span class="val"><b>${pct}%</b></span>
       </div>
       <div class="progress"><i style="width:${pct}%"></i></div>
       <div class="piggy-foot">
-        <span>${money.format(saved)}</span>
+        <span class="saved">${money.format(0)}</span>
         <span>Meta ${money.format(target)}</span>
       </div>`;
     hero.appendChild(el);
+    countUp(el.querySelector(".saved"), saved);
   });
 }
 
@@ -133,12 +151,15 @@ function renderTotals() {
   $("#totals").innerHTML = `
     <div class="total rise">
       <div class="k"><span class="arr up">&uarr;</span> Ingresos</div>
-      <div class="v">${money.format(t.income)}</div>
+      <div class="v">${money.format(0)}</div>
     </div>
     <div class="total expense rise" style="animation-delay:60ms">
       <div class="k"><span class="arr down">&darr;</span> Gastos</div>
-      <div class="v">${money.format(t.expense)}</div>
+      <div class="v">${money.format(0)}</div>
     </div>`;
+  const vs = $("#totals").querySelectorAll(".v");
+  countUp(vs[0], Number(t.income));
+  countUp(vs[1], Number(t.expense));
 }
 
 function renderTxns() {
@@ -199,19 +220,105 @@ function renderTrend() {
     box.innerHTML = `<p class="empty">Aún no hay historial.</p>`;
     return;
   }
+
+  const W = 600, H = 200, padX = 8, padTop = 14, padBottom = 18;
   const max = Math.max(1, ...trend.flatMap((m) => [Number(m.income), Number(m.expense)]));
-  box.innerHTML = trend
-    .map((m, i) => {
-      const h = (v) => Math.max(3, Math.round((Number(v) / max) * 120));
-      return `<div class="col rise" style="animation-delay:${Math.min(i, 8) * 55}ms">
-        <div class="pair">
-          <div class="bar income" style="height:${h(m.income)}px" title="Ingresos ${money.format(m.income)}"></div>
-          <div class="bar expense" style="height:${h(m.expense)}px" title="Gastos ${money.format(m.expense)}"></div>
-        </div>
-        <div class="m">${fmtMonth(m.ym)}</div>
-      </div>`;
-    })
+  const innerH = H - padTop - padBottom;
+  const n = trend.length;
+  const y = (v) => padTop + innerH - (Number(v) / max) * innerH;
+  const x = (i) => (n === 1 ? W / 2 : padX + i * ((W - padX * 2) / (n - 1)));
+
+  const ptsInc = trend.map((m, i) => `${x(i).toFixed(1)},${y(m.income).toFixed(1)}`).join(" ");
+  const ptsExp = trend.map((m, i) => `${x(i).toFixed(1)},${y(m.expense).toFixed(1)}`).join(" ");
+  const baseline = H - padBottom;
+  const areaInc = `M ${x(0).toFixed(1)} ${baseline} L ${ptsInc} L ${x(n - 1).toFixed(1)} ${baseline} Z`;
+  const areaExp = `M ${x(0).toFixed(1)} ${baseline} L ${ptsExp} L ${x(n - 1).toFixed(1)} ${baseline} Z`;
+  const grid = [0.25, 0.5, 0.75, 1]
+    .map((k) => `M 0 ${(padTop + innerH * k).toFixed(1)} L ${W} ${(padTop + innerH * k).toFixed(1)}`)
+    .join(" ");
+
+  box.innerHTML = `
+    <div class="chart-view rise" id="trend-chart">
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="chart">
+        <defs>
+          <linearGradient id="gInc" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#10B981" stop-opacity=".26"/>
+            <stop offset="1" stop-color="#10B981" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="gExp" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#EF4444" stop-opacity=".18"/>
+            <stop offset="1" stop-color="#EF4444" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <g class="grid"><line x1="0" y1="0" x2="${W}" y2="0"/><path d="${grid}"/></g>
+        <path class="area inc" d="${areaInc}"/>
+        <path class="area exp" d="${areaExp}"/>
+        <path class="line inc" d="M ${ptsInc}"/>
+        <path class="line exp" d="M ${ptsExp}"/>
+      </svg>
+      <div class="mlabels">${trend.map((m) => `<span>${fmtMonth(m.ym)}</span>`).join("")}</div>
+      <div class="hdots"></div>
+      <div class="tt" hidden></div>
+    </div>`;
+
+  const view = box.querySelector(".chart-view");
+  const svg = view.querySelector(".chart");
+  const hdots = view.querySelector(".hdots");
+  const tt = view.querySelector(".tt");
+
+  const data = trend.map((m, i) => ({
+    x: x(i),
+    inc: Number(m.income),
+    exp: Number(m.expense),
+    yi: y(m.income),
+    ye: y(m.expense),
+    ym: m.ym,
+  }));
+
+  hdots.innerHTML = data
+    .map(
+      (d, i) =>
+        `<span class="hdot hd-inc" data-i="${i}" style="left:${((d.x / W) * 100).toFixed(2)}%;top:${((d.yi / H) * 100).toFixed(2)}%"></span>` +
+        `<span class="hdot hd-exp" data-i="${i}" style="left:${((d.x / W) * 100).toFixed(2)}%;top:${((d.ye / H) * 100).toFixed(2)}%"></span>`
+    )
     .join("");
+
+  const dots = hdots.querySelectorAll(".hdot");
+
+  function nearest(px) {
+    const c = Math.max(0, Math.min(W, px));
+    let best = 0, bd = Infinity;
+    data.forEach((d, i) => {
+      const dd = Math.abs(d.x - c);
+      if (dd < bd) { bd = dd; best = i; }
+    });
+    return best;
+  }
+
+  function show(i) {
+    const d = data[i];
+    tt.hidden = false;
+    tt.style.left = `calc(${((d.x / W) * 100).toFixed(1)}% - 54px)`;
+    tt.style.top = `${Math.max(2, Math.min((Math.min(d.yi, d.ye) / H) * 100, 70)).toFixed(1)}%`;
+    tt.innerHTML =
+      `<div class="tt-m">${fmtMonth(d.ym)}</div>` +
+      `<div class="tt-r"><i class="d inc"></i>${money.format(d.inc)}</div>` +
+      `<div class="tt-r"><i class="d exp"></i>${money.format(d.exp)}</div>`;
+    dots.forEach((c) => c.classList.toggle("on", Number(c.dataset.i) === i));
+  }
+
+  function hide() {
+    tt.hidden = true;
+    dots.forEach((c) => c.classList.remove("on"));
+  }
+
+  view.addEventListener("pointermove", (e) => {
+    const r = svg.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * W;
+    show(nearest(px));
+  });
+  view.addEventListener("pointerleave", hide);
+  show(n - 1);
 }
 
 function renderSubs() {

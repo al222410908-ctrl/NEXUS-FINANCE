@@ -18,13 +18,16 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
+  background: linear-gradient(180deg, #FBFCFE 0%, var(--bg) 260px);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font);
   font-size: 16px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
+
+:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 
 h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: -.01em; }
 h2 { font-size: 1.05rem; }
@@ -181,14 +184,66 @@ select { font: inherit; }
 .bar-track i { display: block; height: 100%; border-radius: 999px; transition: width .7s cubic-bezier(.4, 0, .2, 1); }
 
 /* ---------- Tendencia ---------- */
-.trend { display: flex; align-items: flex-end; gap: 12px; height: 168px; padding-top: 8px; }
-.trend .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; height: 100%; justify-content: flex-end; min-width: 0; }
-.trend .pair { display: flex; align-items: flex-end; gap: 5px; height: 100%; width: 100%; justify-content: center; }
-.trend .bar { width: min(14px, 34%); border-radius: 5px 5px 2px 2px; min-height: 3px; transition: height .6s cubic-bezier(.4, 0, .2, 1), filter .15s; }
-.trend .bar:hover { filter: brightness(.9); }
-.trend .bar.income { background: linear-gradient(180deg, #34D399, #10B981); }
-.trend .bar.expense { background: linear-gradient(180deg, #F8B4B4, #EF4444); }
-.trend .m { font-size: .7rem; color: var(--muted); font-weight: 500; text-transform: capitalize; }
+.trend { position: relative; padding-top: 6px; }
+.chart-view { position: relative; }
+.chart { display: block; width: 100%; height: auto; overflow: visible; }
+.chart .grid line { stroke: #EEF2F7; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.chart .area.inc { fill: url(#gInc); opacity: 0; animation: fadeIn .6s .25s ease forwards; }
+.chart .area.exp { fill: url(#gExp); opacity: 0; animation: fadeIn .6s .25s ease forwards; }
+.chart .line {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
+  animation: draw 1.1s .2s ease forwards;
+}
+.chart .line.inc { stroke: var(--green); }
+.chart .line.exp { stroke: var(--red); }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes fadeIn { to { opacity: 1; } }
+
+.hdots { position: absolute; inset: 0; }
+.hdot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, .3);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: transform .14s cubic-bezier(.22, 1, .36, 1);
+}
+.hd-inc { border: 2px solid var(--green); }
+.hd-exp { border: 2px solid var(--red); }
+.hdot.on { transform: translate(-50%, -50%) scale(1.55); z-index: 4; }
+
+.tt {
+  position: absolute;
+  pointer-events: none;
+  transform: translate(-50%, -115%);
+  background: #0F172A;
+  color: #fff;
+  border-radius: 10px;
+  padding: 8px 11px;
+  font-size: .74rem;
+  box-shadow: 0 12px 28px -10px rgba(15, 23, 42, .45);
+  z-index: 5;
+  white-space: nowrap;
+  min-width: 108px;
+  transition: opacity .12s;
+}
+.tt .tt-m { font-weight: 700; margin-bottom: 4px; text-transform: capitalize; }
+.tt .tt-r { display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.tt .tt-r + .tt-r { margin-top: 2px; }
+.tt .d { width: 7px; height: 7px; border-radius: 2px; }
+.tt .d.inc { background: var(--green); }
+.tt .d.exp { background: var(--red); }
+
+.mlabels { display: flex; margin-top: 8px; }
+.mlabels span { flex: 1; text-align: center; font-size: .7rem; color: var(--muted); font-weight: 500; text-transform: capitalize; }
 
 /* ---------- Estados ---------- */
 .empty { color: var(--muted); font-size: .88rem; padding: 8px 2px; }
@@ -246,6 +301,11 @@ select { font: inherit; }
 /* ---------- Responsivo ---------- */
 @media (min-width: 640px) {
   .hero { grid-template-columns: 1.15fr 1fr; align-items: stretch; }
-  .trend .bar { width: 18px; }
   .wrap { padding-top: 24px; }
+}
+@media (min-width: 900px) {
+  .wrap { max-width: 940px; padding-top: 30px; gap: 20px; }
+  .balance-card { padding: 26px; }
+  .balance-card .amount { font-size: clamp(2.1rem, 3.4vw, 2.9rem); }
+  .piggy-card { padding: 18px; }
 }
