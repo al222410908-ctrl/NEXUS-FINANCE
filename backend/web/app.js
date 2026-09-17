@@ -1,3 +1,18 @@
+const bootBox = () => document.getElementById("root");
+
+window.addEventListener("error", (e) => {
+  const root = bootBox();
+  if (root) root.innerHTML = "<p class=\"boot\">Error al cargar el panel: " + escapeHtml(e.message || "desconocido") + "</p>";
+});
+
+if (!window.React || !window.htm) {
+  const root = bootBox();
+  if (root) {
+    root.innerHTML = "<p class=\"boot\">No se pudieron cargar las librerías del panel (React o htm). Revisa tu conexión a internet y vuelve a cargar.</p>";
+  }
+  throw new Error("librerias web no disponibles");
+}
+
 const { useState, useEffect, useRef, useMemo } = React;
 const h = window.htm.bind(React.createElement);
 

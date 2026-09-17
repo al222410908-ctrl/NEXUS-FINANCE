@@ -42,6 +42,17 @@ log = logging.getLogger("nexus.main")
 app = FastAPI(title="NexusFinance API", version="0.1.0")
 
 
+@app.middleware("http")
+async def no_cache_web(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if path in ("/", "/index.html") or path.endswith(".html"):
+        response.headers["Cache-Control"] = "no-store"
+    elif path.startswith("/static") or path.startswith(("/app.js", "/styles.css", "/manifest", "/sw.js")):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 @app.get("/api/health")
 def health():
     return {"ok": True, "service": "NexusFinance"}
