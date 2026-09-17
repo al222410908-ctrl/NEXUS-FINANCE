@@ -14,8 +14,8 @@
   <meta name="apple-mobile-web-app-title" content="Nexus" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v8" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css?v9" />
   <script>
     // Limpia copias viejas guardadas (service worker y caché) para que el panel siempre se vea actual.
     if ("serviceWorker" in navigator) {
@@ -47,7 +47,7 @@
 
     <section class="card-section">
       <h2>Gastos por categoría</h2>
-      <div id="categories" class="bars"></div>
+      <div id="categories" class="categories-wrap"></div>
     </section>
 
     <section class="card-section">
@@ -56,7 +56,7 @@
         <span class="lg"><i class="d inc"></i>Ingresos</span>
         <span class="lg"><i class="d exp"></i>Gastos</span>
       </div>
-      <div id="trend" class="trend"></div>
+      <div id="trend" class="trend-wrap"></div>
     </section>
 
     <section class="card-section">
@@ -68,6 +68,7 @@
     <p id="err" class="err" hidden>No se pudo cargar el panel. Revisa tu conexión o inténtalo de nuevo.</p>
   </main>
 
-  <script src="/app.js?v8"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="/app.js?v9"></script>
 </body>
 </html>

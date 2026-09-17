@@ -15,6 +15,20 @@ const CAT_COLOR = {
   "Sin categoría": "#94A3B8",
 };
 
+const SVG = {
+  Salario: '<rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>',
+  Transporte: '<polyline points="5 11 1 11 4 4 11 4"></polyline><polyline points="19 11 23 11 20 4 13 4"></polyline><line x1="12" y1="14" x2="12" y2="20"></line><line x1="8" y1="20" x2="16" y2="20"></line>',
+  Comida: '<path d="M7 2v5M7 12v10M4 12h6"></path><path d="M17 2v20M14 8a4 4 0 0 1 6 0v6h-6z"></path>',
+  Hogar: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>',
+  Entretenimiento: '<rect x="2" y="3" width="20" height="18" rx="2"></rect><line x1="2" y1="8" x2="22" y2="8"></line><line x1="7" y1="3" x2="7" y2="8"></line><line x1="17" y1="3" x2="17" y2="8"></line><line x1="7" y1="16" x2="7" y2="21"></line><line x1="17" y1="16" x2="17" y2="21"></line>',
+  Salud: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>',
+  Ropa: '<path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 1.1.84l.9-.15a1 1 0 0 0 .88-.72V21a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9.13a1 1 0 0 0 .88.71l.9.16a1 1 0 0 0 1.1-.86l.58-3.47a2 2 0 0 0-1.34-2.23Z"></path>',
+  Servicios: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>',
+  Suscripciones: '<polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path>',
+  Otros: '<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line>',
+};
+SVG["Sin categoría"] = SVG.Otros;
+
 const state = { summary: null, stats: null, txns: [], month: null };
 
 async function api(path, opts = {}) {
@@ -41,16 +55,22 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-function lightBg(hex) {
-  return `${hex}1F`;
+function icon(cat, size = 19) {
+  const d = SVG[cat] || SVG.Otros;
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 }
 
+const ARROW_UP = `<svg viewBox="0 0 24 24" class="tx" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
+const ARROW_DOWN = `<svg viewBox="0 0 24 24" class="tx" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>`;
+const REPEAT = `<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${SVG.Suscripciones}</svg>`;
+
 function countUp(el, value) {
-  if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    if (el) el.textContent = money.format(value);
+  if (!el) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    el.textContent = money.format(value);
     return;
   }
-  const dur = 750;
+  const dur = 700;
   const start = performance.now();
   function frame(now) {
     const p = Math.min(1, (now - start) / dur);
@@ -65,35 +85,32 @@ function countUp(el, value) {
 
 function skeleton() {
   const txns = Array.from({ length: 5 }, (_, i) => `
-    <div class="row" style="animation-delay:${i * 60}ms">
+    <div class="row">
       <div class="sk icon"></div>
       <div class="body">
         <div class="sk h16 w70"></div>
         <div class="sk h12 w40" style="margin-top:7px"></div>
       </div>
-      <div class="sk h16 w20"></div>
+      <div class="sk h16 w24"></div>
     </div>`).join("");
 
   $("#hero").innerHTML = `
     <div class="balance-card">
-      <div class="sk h16 w30" style="background:rgba(255,255,255,.16)"></div>
-      <div class="sk h40 w60" style="background:rgba(255,255,255,.22);margin:10px 0"></div>
-      <div class="sk h16 w50" style="background:rgba(255,255,255,.16)"></div>
+      <div class="sk h16 w30" style="background:rgba(255,255,255,.1)"></div>
+      <div class="sk h56 w70" style="background:rgba(255,255,255,.14);margin:12px 0"></div>
+      <div class="sk h12 w50" style="background:rgba(255,255,255,.08)"></div>
     </div>
     <div class="piggy-card">
       <div class="sk h20 w50"></div>
-      <div class="sk h20 w90" style="margin-top:14px"></div>
+      <div class="sk h12 w90" style="margin-top:16px"></div>
     </div>`;
 
   $("#totals").innerHTML = `
-    <div class="total"><div class="sk h16 w50"></div><div class="sk h24 w70" style="margin-top:6px"></div></div>
-    <div class="total"><div class="sk h16 w50"></div><div class="sk h24 w70" style="margin-top:6px"></div></div>`;
+    <div class="total"><div class="sk icon"></div><div class="body"><div class="sk h12 w50"></div><div class="sk h20 w80" style="margin-top:6px"></div></div></div>
+    <div class="total"><div class="sk icon"></div><div class="body"><div class="sk h12 w50"></div><div class="sk h20 w80" style="margin-top:6px"></div></div></div>`;
 
   $("#txns").innerHTML = txns;
-  $("#categories").innerHTML = `
-    <div class="bar-row"><div class="sk h16 w40"></div><div class="sk h16 w70" style="margin-top:10px"></div></div>
-    <div class="bar-row"><div class="sk h16 w60"></div><div class="sk h16 w50" style="margin-top:10px"></div></div>
-    <div class="bar-row"><div class="sk h16 w30"></div><div class="sk h16 w80" style="margin-top:10px"></div></div>`;
+  $("#categories").innerHTML = `<p class="empty">Cargando…</p>`;
   $("#trend").innerHTML = `<p class="empty">Cargando…</p>`;
   $("#subs").innerHTML = `<p class="empty">Cargando…</p>`;
 }
@@ -113,11 +130,12 @@ function renderHero() {
   if (pocket) {
     const el = document.createElement("div");
     el.className = "balance-card rise";
+    const base = allowance?.[0]?.base_amount ?? 0;
     el.innerHTML = `
       <div class="label">${escapeHtml(pocket.name)}</div>
       <div class="amount">${money.format(0)}</div>
       <div class="tags">
-        <span class="tag">Base ${money.format(allowance?.[0]?.base_amount ?? 0)}</span>
+        <span class="tag">Base ${money.format(base)}</span>
         <span class="tag">Se reinicia cada lunes</span>
       </div>`;
     hero.appendChild(el);
@@ -130,11 +148,11 @@ function renderHero() {
     const pct = Math.min(100, Math.round((saved / target) * 100));
     const el = document.createElement("div");
     el.className = "piggy-card rise";
-    el.style.animationDelay = `${80 + i * 70}ms`;
+    el.style.animationDelay = `${90 + i * 70}ms`;
     el.innerHTML = `
       <div class="piggy-top">
-        <span class="name"><i class="d" style="background:var(--green)"></i>${escapeHtml(p.name)}</span>
-        <span class="val"><b>${pct}%</b></span>
+        <span class="name"><i class="d"></i>${escapeHtml(p.name)}</span>
+        <span class="val">${pct}%</span>
       </div>
       <div class="progress"><i style="width:${pct}%"></i></div>
       <div class="piggy-foot">
@@ -149,13 +167,19 @@ function renderHero() {
 function renderTotals() {
   const t = state.stats?.totals || { income: 0, expense: 0 };
   $("#totals").innerHTML = `
-    <div class="total rise">
-      <div class="k"><span class="arr up">&uarr;</span> Ingresos</div>
-      <div class="v">${money.format(0)}</div>
+    <div class="total income rise">
+      <div class="t-icon">${ARROW_UP}</div>
+      <div class="body">
+        <div class="k">Ingresos</div>
+        <div class="v">${money.format(0)}</div>
+      </div>
     </div>
     <div class="total expense rise" style="animation-delay:60ms">
-      <div class="k"><span class="arr down">&darr;</span> Gastos</div>
-      <div class="v">${money.format(0)}</div>
+      <div class="t-icon">${ARROW_DOWN}</div>
+      <div class="body">
+        <div class="k">Gastos</div>
+        <div class="v">${money.format(0)}</div>
+      </div>
     </div>`;
   const vs = $("#totals").querySelectorAll(".v");
   countUp(vs[0], Number(t.income));
@@ -173,20 +197,28 @@ function renderTxns() {
       const isIncome = t.tx_type === "income";
       const sign = isIncome ? "+" : t.tx_type === "expense" ? "&#8722;" : "";
       const cls = t.tx_type === "income" ? "income" : t.tx_type === "sweep" ? "sweep" : "expense";
-      const title = t.concept || t.category || "Movimiento";
       const isSweep = t.tx_type === "sweep";
-      const color = isSweep ? "#94A3B8" : catColor(t.category);
-      const glyph = isSweep ? "&#8635;" : (t.category || "?").charAt(0).toUpperCase();
+      const title = t.concept || t.category || "Movimiento";
+      const cat = t.category || (isIncome ? "Salario" : isSweep ? "Otros" : "Otros");
+      const color = isSweep ? "#64748B" : catColor(cat);
       return `<div class="row rise" style="animation-delay:${Math.min(i, 12) * 35}ms">
-        <div class="dot" style="background:${lightBg(color)};color:${color}">${glyph}</div>
+        <div class="dot" style="background:${color}1F;color:${color}">${isSweep ? REPEAT : icon(cat)}</div>
         <div class="body">
           <div class="title">${escapeHtml(title)}</div>
-          <div class="meta">${fmtDate(t.created_at)} · ${escapeHtml(t.category || "—")} · ${escapeHtml(t.account)}</div>
+          <div class="meta">${escapeHtml(cat)}</div>
         </div>
-        <div class="amt ${cls}">${sign}${money.format(t.amount)}</div>
+        <div class="side">
+          <div class="date">${fmtDate(t.created_at)}</div>
+          <div class="amt ${cls}">${sign}${money.format(t.amount)}</div>
+        </div>
       </div>`;
     })
     .join("");
+}
+
+function destroyChart(id) {
+  const el = document.getElementById(id);
+  if (el && window.Chart && window.Chart.getChart(el)) window.Chart.getChart(el).destroy();
 }
 
 function renderCategories() {
@@ -196,19 +228,66 @@ function renderCategories() {
     box.innerHTML = `<p class="empty">Sin gastos registrados este mes.</p>`;
     return;
   }
-  const max = Math.max(...cats.map((c) => Number(c.total)));
-  box.innerHTML = cats
-    .map((c, i) => {
-      const total = Number(c.total);
-      const pct = Math.max(4, Math.round((total / max) * 100));
-      const color = catColor(c.category);
-      return `<div class="bar-row rise" style="animation-delay:${Math.min(i, 10) * 45}ms">
-        <div class="bar-head">
-          <span class="cat"><i class="d" style="background:${color}"></i>${escapeHtml(c.category)}</span>
-          <span class="val">${money.format(total)}</span>
-        </div>
-        <div class="bar-track"><i style="width:${pct}%;background:${color}"></i></div>
-      </div>`;
+  const total = cats.reduce((s, c) => s + Number(c.total), 0) || 1;
+
+  if (!window.Chart) {
+    const max = Math.max(...cats.map((c) => Number(c.total)));
+    box.innerHTML = cats
+      .map((c) => {
+        const pct = Math.max(4, Math.round((Number(c.total) / max) * 100));
+        const color = catColor(c.category);
+        return `<div class="cat-row" style="background:${color}0D;padding:8px 10px;border-radius:10px"><i class="cc" style="background:${color}"></i>
+          <span class="cn">${escapeHtml(c.category)}</span>
+          <span class="cv">${money.format(c.total)}</span></div>`;
+      })
+      .join("");
+    return;
+  }
+
+  destroyChart("catChart");
+  box.innerHTML = `
+    <div class="donut-box rise"><canvas id="catChart"></canvas></div>
+    <div id="catLegend" class="cat-legend rise" style="animation-delay:80ms"></div>`;
+
+  new Chart(document.getElementById("catChart"), {
+    type: "doughnut",
+    data: {
+      labels: cats.map((c) => c.category),
+      datasets: [{
+        data: cats.map((c) => Number(c.total)),
+        backgroundColor: cats.map((c) => catColor(c.category)),
+        borderColor: "#1E293B",
+        borderWidth: 5,
+        hoverOffset: 7,
+      }],
+    },
+    options: {
+      cutout: "72%",
+      maintainAspectRatio: false,
+      animation: { animateRotate: true, animateScale: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "#0B1220",
+          borderColor: "rgba(255,255,255,.08)",
+          borderWidth: 1,
+          titleColor: "#fff",
+          padding: 10,
+          displayColors: false,
+          callbacks: {
+            label: (ctx) => ` ${money.format(ctx.parsed)} · ${Math.round((ctx.parsed / total) * 100)}%`,
+          },
+        },
+      },
+    },
+  });
+
+  document.getElementById("catLegend").innerHTML = cats
+    .map((c) => {
+      const pct = Math.round((Number(c.total) / total) * 100);
+      return `<div class="cat-row"><i class="cc" style="background:${catColor(c.category)}"></i>
+        <span class="cn">${escapeHtml(c.category)}</span>
+        <span class="cv">${money.format(c.total)} · ${pct}%</span></div>`;
     })
     .join("");
 }
@@ -221,104 +300,65 @@ function renderTrend() {
     return;
   }
 
-  const W = 600, H = 200, padX = 8, padTop = 14, padBottom = 18;
-  const max = Math.max(1, ...trend.flatMap((m) => [Number(m.income), Number(m.expense)]));
-  const innerH = H - padTop - padBottom;
-  const n = trend.length;
-  const y = (v) => padTop + innerH - (Number(v) / max) * innerH;
-  const x = (i) => (n === 1 ? W / 2 : padX + i * ((W - padX * 2) / (n - 1)));
-
-  const ptsInc = trend.map((m, i) => `${x(i).toFixed(1)},${y(m.income).toFixed(1)}`).join(" ");
-  const ptsExp = trend.map((m, i) => `${x(i).toFixed(1)},${y(m.expense).toFixed(1)}`).join(" ");
-  const baseline = H - padBottom;
-  const areaInc = `M ${x(0).toFixed(1)} ${baseline} L ${ptsInc} L ${x(n - 1).toFixed(1)} ${baseline} Z`;
-  const areaExp = `M ${x(0).toFixed(1)} ${baseline} L ${ptsExp} L ${x(n - 1).toFixed(1)} ${baseline} Z`;
-  const grid = [0.25, 0.5, 0.75, 1]
-    .map((k) => `M 0 ${(padTop + innerH * k).toFixed(1)} L ${W} ${(padTop + innerH * k).toFixed(1)}`)
-    .join(" ");
-
-  box.innerHTML = `
-    <div class="chart-view rise" id="trend-chart">
-      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="chart">
-        <defs>
-          <linearGradient id="gInc" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#10B981" stop-opacity=".26"/>
-            <stop offset="1" stop-color="#10B981" stop-opacity="0"/>
-          </linearGradient>
-          <linearGradient id="gExp" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#EF4444" stop-opacity=".18"/>
-            <stop offset="1" stop-color="#EF4444" stop-opacity="0"/>
-          </linearGradient>
-        </defs>
-        <g class="grid"><line x1="0" y1="0" x2="${W}" y2="0"/><path d="${grid}"/></g>
-        <path class="area inc" d="${areaInc}"/>
-        <path class="area exp" d="${areaExp}"/>
-        <path class="line inc" d="M ${ptsInc}"/>
-        <path class="line exp" d="M ${ptsExp}"/>
-      </svg>
-      <div class="mlabels">${trend.map((m) => `<span>${fmtMonth(m.ym)}</span>`).join("")}</div>
-      <div class="hdots"></div>
-      <div class="tt" hidden></div>
-    </div>`;
-
-  const view = box.querySelector(".chart-view");
-  const svg = view.querySelector(".chart");
-  const hdots = view.querySelector(".hdots");
-  const tt = view.querySelector(".tt");
-
-  const data = trend.map((m, i) => ({
-    x: x(i),
-    inc: Number(m.income),
-    exp: Number(m.expense),
-    yi: y(m.income),
-    ye: y(m.expense),
-    ym: m.ym,
-  }));
-
-  hdots.innerHTML = data
-    .map(
-      (d, i) =>
-        `<span class="hdot hd-inc" data-i="${i}" style="left:${((d.x / W) * 100).toFixed(2)}%;top:${((d.yi / H) * 100).toFixed(2)}%"></span>` +
-        `<span class="hdot hd-exp" data-i="${i}" style="left:${((d.x / W) * 100).toFixed(2)}%;top:${((d.ye / H) * 100).toFixed(2)}%"></span>`
-    )
-    .join("");
-
-  const dots = hdots.querySelectorAll(".hdot");
-
-  function nearest(px) {
-    const c = Math.max(0, Math.min(W, px));
-    let best = 0, bd = Infinity;
-    data.forEach((d, i) => {
-      const dd = Math.abs(d.x - c);
-      if (dd < bd) { bd = dd; best = i; }
-    });
-    return best;
+  if (!window.Chart) {
+    const max = Math.max(1, ...trend.flatMap((m) => [Number(m.income), Number(m.expense)]));
+    box.innerHTML = `<div class="chart-fallback rise">${trend
+      .map((m, i) => {
+        const h = (v) => Math.max(3, Math.round((Number(v) / max) * 150));
+        return `<div class="col rise" style="animation-delay:${i * 50}ms">
+          <div class="pair">
+            <div class="bar income" style="height:${h(m.income)}px"></div>
+            <div class="bar expense" style="height:${h(m.expense)}px"></div>
+          </div>
+          <div class="m">${fmtMonth(m.ym)}</div>
+        </div>`;
+      })
+      .join("")}</div>`;
+    return;
   }
 
-  function show(i) {
-    const d = data[i];
-    tt.hidden = false;
-    tt.style.left = `calc(${((d.x / W) * 100).toFixed(1)}% - 54px)`;
-    tt.style.top = `${Math.max(2, Math.min((Math.min(d.yi, d.ye) / H) * 100, 70)).toFixed(1)}%`;
-    tt.innerHTML =
-      `<div class="tt-m">${fmtMonth(d.ym)}</div>` +
-      `<div class="tt-r"><i class="d inc"></i>${money.format(d.inc)}</div>` +
-      `<div class="tt-r"><i class="d exp"></i>${money.format(d.exp)}</div>`;
-    dots.forEach((c) => c.classList.toggle("on", Number(c.dataset.i) === i));
-  }
+  destroyChart("trendChart");
+  box.innerHTML = `<canvas id="trendChart" class="rise"></canvas>`;
 
-  function hide() {
-    tt.hidden = true;
-    dots.forEach((c) => c.classList.remove("on"));
-  }
-
-  view.addEventListener("pointermove", (e) => {
-    const r = svg.getBoundingClientRect();
-    const px = ((e.clientX - r.left) / r.width) * W;
-    show(nearest(px));
+  new Chart(document.getElementById("trendChart"), {
+    type: "bar",
+    data: {
+      labels: trend.map((m) => fmtMonth(m.ym)),
+      datasets: [
+        { label: "Ingresos", data: trend.map((m) => Number(m.income)), backgroundColor: "#10B981", borderRadius: 5, barPercentage: 0.55, categoryPercentage: 0.66 },
+        { label: "Gastos", data: trend.map((m) => Number(m.expense)), backgroundColor: "#EF4444", borderRadius: 5, barPercentage: 0.55, categoryPercentage: 0.66 },
+      ],
+    },
+    options: {
+      maintainAspectRatio: false,
+      animation: { duration: 700, easing: "easeOutQuart" },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "#0B1220",
+          borderColor: "rgba(255,255,255,.08)",
+          borderWidth: 1,
+          titleColor: "#fff",
+          padding: 10,
+          displayColors: false,
+          callbacks: {
+            label: (ctx) => ` ${ctx.dataset.label}: ${money.format(ctx.parsed.y)}`,
+          },
+        },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: "#64748B", font: { size: 10 } } },
+        y: {
+          grid: { color: "rgba(255,255,255,.06)" },
+          ticks: {
+            color: "#64748B",
+            font: { size: 10 },
+            callback: (v) => "$" + Number(v).toLocaleString("es-MX"),
+          },
+        },
+      },
+    },
   });
-  view.addEventListener("pointerleave", hide);
-  show(n - 1);
 }
 
 function renderSubs() {
@@ -331,12 +371,15 @@ function renderSubs() {
   box.innerHTML = subs
     .map(
       (s, i) => `<div class="row rise" style="animation-delay:${Math.min(i, 8) * 45}ms">
-        <div class="dot" style="background:#6366F11F;color:#6366F1">&#8635;</div>
+        <div class="dot" style="background:#6366F11F;color:#818CF8">${REPEAT}</div>
         <div class="body">
           <div class="title">${escapeHtml(s.name)}</div>
           <div class="meta">Día ${s.billing_day} · ${escapeHtml(s.account_name)}</div>
         </div>
-        <div class="amt">${money.format(s.amount)}</div>
+        <div class="side">
+          <div class="date">${escapeHtml(s.account_name)}</div>
+          <div class="amt">${money.format(s.amount)}</div>
+        </div>
       </div>`
     )
     .join("");
