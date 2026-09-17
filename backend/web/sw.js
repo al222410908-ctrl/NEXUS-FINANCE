@@ -1,8 +1,8 @@
-const CACHE = "nexus-v4";
+const CACHE = "nexus-v5";
 const ASSETS = [
   "/",
-  "/styles.css?v4",
-  "/app.js?v4",
+  "/styles.css?v5",
+  "/app.js?v5",
   "/manifest.webmanifest",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
