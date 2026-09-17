@@ -232,6 +232,10 @@ def _month_options(stats, month):
 
 def _build(summary, stats, txns, month):
     css = (WEB_DIR / "styles.css").read_text(encoding="utf-8")
+    raw_totals = stats.get("totals") or {}
+    if not isinstance(raw_totals, dict):
+        raw_totals = {}
+    totals = {"income": raw_totals.get("income", 0), "expense": raw_totals.get("expense", 0)}
     emb = {
         "summary": summary,
         "stats": stats,
@@ -286,8 +290,8 @@ if ("caches" in window) {{
   <main class="wrap">
     {_hero(summary)}
     <section class="totals">
-      {_total_row(stats.get("totals") or {{}}, True)}
-      {_total_row(stats.get("totals") or {{}}, False)}
+      {_total_row(totals, True)}
+      {_total_row(totals, False)}
     </section>
     <section class="card-section"><h2>Movimientos</h2>{_txns(txns)}</section>
     <section class="card-section">
