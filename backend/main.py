@@ -39,6 +39,37 @@ SESSION_TTL = 60 * 60 * 24 * 30  # 30 días
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("nexus.main")
 
+PANEL_REPORTS: list = []
+
+
+def _clean_panel_value(v) -> str:
+    raw = str(v)
+    return "".join(ch for ch in raw if ch.isprintable() or ch in "\n\t")[:500]
+
+
+@app.post("/api/panel_report")
+async def panel_report(request: Request):
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    PANEL_REPORTS.append(
+        {
+            "tag": _clean_panel_value(payload.get("tag", "?")),
+            "extra": _clean_panel_value(payload.get("extra", "")),
+            "ua": _clean_panel_value(payload.get("ua", ""))[:120],
+            "ts": time.time(),
+        }
+    )
+    if len(PANEL_REPORTS) > 200:
+        PANEL_REPORTS.pop(0)
+    return Response("{}", media_type="application/json")
+
+
+@app.get("/api/panel_report")
+async def panel_report_list():
+    return {"reports": list(PANEL_REPORTS)}
+
 app = FastAPI(title="NexusFinance API", version="0.1.0")
 
 

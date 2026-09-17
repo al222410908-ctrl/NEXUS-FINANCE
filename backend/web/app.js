@@ -1,11 +1,24 @@
 const bootBox = () => document.getElementById("root");
 
+function report(tag, extra) {
+  try {
+    fetch("/api/panel_report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tag: tag, extra: extra || "", ua: navigator.userAgent.slice(0, 120) }),
+      credentials: "omit",
+    }).catch(function () {});
+  } catch (e) {}
+}
+
 window.addEventListener("error", (e) => {
+  report("winerr", e.message || "desconocido");
   const root = bootBox();
   if (root) root.innerHTML = "<p class=\"boot\">Error al cargar el panel: " + escapeHtml(e.message || "desconocido") + "</p>";
 });
 
 if (!window.React || !window.htm) {
+  report("noreact", "React:" + !!window.React + " htm:" + !!window.htm);
   const root = bootBox();
   if (root) {
     root.innerHTML = "<p class=\"boot\">No se pudieron cargar las librerías del panel (React o htm). Revisa tu conexión a internet y vuelve a cargar.</p>";
@@ -15,7 +28,7 @@ if (!window.React || !window.htm) {
 
 const { useState, useEffect, useRef, useMemo } = React;
 const h = window.htm.bind(React.createElement);
-const VERSION = "v13";
+const VERSION = "v14";
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
@@ -421,7 +434,8 @@ function App() {
         setStats(st);
         setTxns(tx.items || []);
         setErr(false);
-      } catch {
+      } catch (e) {
+        report("loaderr", (e && e.message) || String(e));
         setErr(true);
       }
     })();
@@ -437,10 +451,20 @@ function App() {
       ]);
       setStats(st);
       setTxns(tx.items || []);
-    } catch {
+    } catch (e) {
+      report("montherr", (e && e.message) || String(e));
       setErr(true);
     }
   }
+
+  const okReported = useRef(false);
+  useEffect(() => {
+    if (summary && stats && txns && !err && !okReported.current) {
+      okReported.current = true;
+      const root = document.getElementById("root");
+      report("ok", "hijos=" + (root ? root.childElementCount : -1));
+    }
+  }, [summary, stats, txns, err]);
 
   const topbar = h`<header className="topbar">
     <div className="brand">
@@ -500,6 +524,15 @@ window.addEventListener("error", (e) => {
 try {
   ReactDOM.createRoot(document.getElementById("root")).render(h`<App />`);
 } catch (e) {
+  report("booterr", (e && e.message) || String(e));
   const root = document.getElementById("root");
-  if (root) root.innerHTML = '<p class="boot">Error de arranque: ' + escapeHtml(e.message || String(e)) + "</p>";
+  if (root) root.innerHTML = '<p class="boot">Error de arranque: ' + escapeHtml((e && e.message) || String(e)) + "</p>";
 }
+
+setTimeout(() => {
+  const root = document.getElementById("root");
+  if (root && !root.childNodes.length) {
+    report("empty_root", "el arranque termino sin contenido en pantalla");
+    root.innerHTML = '<p class="boot">El panel quedó vacío de forma inesperada. Intenta recargar; si sigue, avísale a Nexus con este código: EMPTY.</p>';
+  }
+}, 6000);
