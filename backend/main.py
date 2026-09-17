@@ -39,6 +39,20 @@ SESSION_TTL = 60 * 60 * 24 * 30  # 30 días
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("nexus.main")
 
+app = FastAPI(title="NexusFinance API", version="0.1.0")
+
+
+@app.middleware("http")
+async def no_cache_web(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if path in ("/", "/index.html") or path.endswith(".html"):
+        response.headers["Cache-Control"] = "no-store"
+    elif path.startswith("/static") or path.startswith(("/app.js", "/styles.css", "/manifest", "/sw.js")):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 PANEL_REPORTS: list = []
 
 
@@ -69,19 +83,6 @@ async def panel_report(request: Request):
 @app.get("/api/panel_report")
 async def panel_report_list():
     return {"reports": list(PANEL_REPORTS)}
-
-app = FastAPI(title="NexusFinance API", version="0.1.0")
-
-
-@app.middleware("http")
-async def no_cache_web(request: Request, call_next):
-    response = await call_next(request)
-    path = request.url.path
-    if path in ("/", "/index.html") or path.endswith(".html"):
-        response.headers["Cache-Control"] = "no-store"
-    elif path.startswith("/static") or path.startswith(("/app.js", "/styles.css", "/manifest", "/sw.js")):
-        response.headers["Cache-Control"] = "no-cache"
-    return response
 
 
 @app.get("/api/health")
