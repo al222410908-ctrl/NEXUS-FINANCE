@@ -153,6 +153,26 @@ def api_stats(request: Request, month: str | None = None):
         conn.close()
 
 
+@app.get("/api/check")
+def api_check(pw: str = ""):
+    """Autodiagnóstico (sin secretos): qué config y si la contraseña/token es válida."""
+    from . import DATABASE_URL
+
+    return {
+        "pw_ok": _pwd_ok(pw),
+        "has_cron": bool(CRON_AUTH_TOKEN),
+        "has_dash": bool(DASHBOARD_PASSWORD),
+        "dash_differs": bool(
+            DASHBOARD_PASSWORD and CRON_AUTH_TOKEN and DASHBOARD_PASSWORD != CRON_AUTH_TOKEN
+        ),
+        "db_host": (
+            DATABASE_URL.split("@", 1)[1].split("/", 1)[0]
+            if DATABASE_URL and "@" in DATABASE_URL
+            else None
+        ),
+    }
+
+
 @app.get("/debug/db")
 def debug_db(token: str = ""):
     if CRON_AUTH_TOKEN and token != CRON_AUTH_TOKEN:
