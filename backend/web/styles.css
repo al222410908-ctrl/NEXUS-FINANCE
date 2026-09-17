@@ -225,9 +225,13 @@ canvas { display: block; max-width: 100%; }
 .cat-row .cc { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 9px; }
 .cat-row .cn { flex: 1; min-width: 0; font-weight: 500; color: #D6DEEA; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cat-row .cv { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--muted); }
+.donut-row { display: grid; gap: 16px; }
+@media (min-width: 640px) { .donut-row { grid-template-columns: 200px 1fr; align-items: center; gap: 20px; } }
 
 /* ---------- Tendencia ---------- */
 .trend-wrap { position: relative; height: 200px; }
+.trend-canvas { position: relative; height: 250px; }
+@media (min-width: 640px) { .trend-canvas { height: 270px; } }
 .chart-fallback { display: flex; align-items: flex-end; gap: 12px; height: 176px; padding-top: 8px; }
 .chart-fallback .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; height: 100%; justify-content: flex-end; min-width: 0; }
 .chart-fallback .pair { display: flex; align-items: flex-end; gap: 5px; height: 100%; width: 100%; justify-content: center; }
