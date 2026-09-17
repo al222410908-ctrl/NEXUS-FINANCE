@@ -193,7 +193,7 @@ def list_summary(conn):
             select t.created_at::date as day,
                    t.tx_type,
                    t.amount,
-                   t.concept,
+                   t.raw_input as concept,
                    c.name as category,
                    a.name as account
             from transactions t
