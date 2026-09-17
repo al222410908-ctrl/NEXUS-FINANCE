@@ -229,16 +229,12 @@ async function load() {
 // ---------------------------------------------------------------- boot
 
 async function boot() {
-  if (!PW) {
-    showLogin();
-    return;
-  }
   try {
     await api("/api/session");
     showApp();
     await load();
   } catch {
-    /* api() ya mostró el login */
+    /* Sin sesión válida: api() ya mostró el login */
   }
 }
 

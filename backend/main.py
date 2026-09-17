@@ -2,6 +2,7 @@
 import hashlib
 import hmac
 import logging
+import os
 import time
 from datetime import date
 from decimal import Decimal
@@ -88,7 +89,14 @@ def _valid_token(token: str | None) -> bool:
         return False
 
 
+def _public() -> bool:
+    """Panel sin contraseña por defecto. Poner DASHBOARD_PUBLIC=0 en Render para volver a exigir login."""
+    return os.environ.get("DASHBOARD_PUBLIC", "1") in ("1", "true", "yes", "on")
+
+
 def _require_session(request: Request):
+    if _public():
+        return
     if _valid_token(request.cookies.get(SESSION_COOKIE)):
         return
     if _pwd_ok(request.headers.get("x-dashboard-token")):
@@ -98,7 +106,7 @@ def _require_session(request: Request):
 
 @app.post("/api/login")
 def api_login(body: LoginBody, request: Request, response: Response):
-    if not _pwd_ok(body.password):
+    if not _public() and not _pwd_ok(body.password):
         raise HTTPException(401, "Contraseña incorrecta")
     response.set_cookie(
         SESSION_COOKIE,
