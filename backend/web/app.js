@@ -287,7 +287,8 @@ $("#month").addEventListener("change", async (e) => {
 });
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+  // Sin service worker: evita que copias viejas queden guardadas en el dispositivo.
+  navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister()));
 }
 
 boot();

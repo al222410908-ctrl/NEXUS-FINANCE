@@ -12,7 +12,16 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Nexus" />
-  <link rel="stylesheet" href="/styles.css?v5" />
+  <link rel="stylesheet" href="/styles.css?v6" />
+  <script>
+    // Limpia copias viejas guardadas (service worker y caché) para que el panel siempre se vea actual.
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); });
+    }
+    if ("caches" in window) {
+      caches.keys().then(function (keys) { keys.forEach(function (k) { caches.delete(k); }); });
+    }
+  </script>
 </head>
 <body>
   <div id="login" class="login" hidden>
@@ -70,6 +79,6 @@
     </main>
   </div>
 
-  <script src="/app.js?v5"></script>
+  <script src="/app.js?v6"></script>
 </body>
 </html>
