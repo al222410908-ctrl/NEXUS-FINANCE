@@ -8,10 +8,15 @@ const CAT_ICON = {
 };
 
 const state = { summary: null, stats: null, txns: [], month: null };
+let PW = sessionStorage.getItem("nx_pw") || "";
 
 async function api(path, opts = {}) {
-  const res = await fetch(path, { credentials: "same-origin", ...opts });
+  const headers = new Headers(opts.headers || {});
+  if (PW) headers.set("x-dashboard-token", PW);
+  const res = await fetch(path, { credentials: "omit", ...opts, headers });
   if (res.status === 401) {
+    PW = "";
+    sessionStorage.removeItem("nx_pw");
     showLogin();
     throw new Error("unauthorized");
   }
@@ -22,6 +27,7 @@ async function api(path, opts = {}) {
 function showLogin() {
   $("#app").hidden = true;
   $("#login").hidden = false;
+  $("#password").focus();
 }
 
 function showApp() {
@@ -223,12 +229,16 @@ async function load() {
 // ---------------------------------------------------------------- boot
 
 async function boot() {
+  if (!PW) {
+    showLogin();
+    return;
+  }
   try {
     await api("/api/session");
     showApp();
     await load();
   } catch {
-    /* showLogin ya se llamó desde api() */
+    /* api() ya mostró el login */
   }
 }
 
@@ -248,18 +258,22 @@ $("#login-form").addEventListener("submit", async (e) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password: pwd }),
     });
+    PW = pwd;
+    sessionStorage.setItem("nx_pw", pwd);
     $("#password").value = "";
     showApp();
     await load();
   } catch (e2) {
-    // 401 también cae aquí: el backend rechazó la contraseña.
+    // 401 (o cualquier fallo tras login) cae aquí.
     err.textContent = "Contraseña incorrecta. Pega el token exacto (respetando mayúsculas).";
     err.hidden = false;
   }
 });
 
 $("#logout").addEventListener("click", async () => {
-  await fetch("/api/logout", { method: "POST", credentials: "same-origin" });
+  PW = "";
+  sessionStorage.removeItem("nx_pw");
+  await fetch("/api/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
   showLogin();
 });
 

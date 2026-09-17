@@ -1,8 +1,8 @@
-const CACHE = "nexus-v2";
+const CACHE = "nexus-v4";
 const ASSETS = [
   "/",
-  "/styles.css",
-  "/app.js",
+  "/styles.css?v4",
+  "/app.js?v4",
   "/manifest.webmanifest",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
@@ -30,19 +30,16 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/api/")) return;
 
   event.respondWith(
-    caches.match(request).then(
-      (hit) =>
-        hit ||
-        fetch(request)
-          .then((res) => {
-            const copy = res.clone();
-            caches.open(CACHE).then((cache) => cache.put(request, copy));
-            return res;
-          })
-          .catch(() => caches.match("/"))
-    )
+    fetch(request)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((cache) => cache.put(request, copy));
+        return res;
+      })
+      .catch(async () => (await caches.match(request)) || (await caches.match("/")) || Response.error())
   );
 });
